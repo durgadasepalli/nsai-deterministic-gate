@@ -28,6 +28,7 @@ This framework implements a three-tier governance model:
     <artifactId>nsai-deterministic-gate-starter</artifactId>
     <version>1.0.0-BETA</version>
 </dependency>
+'''
 
 **Example Usage**
 ```java
@@ -45,4 +46,8 @@ public class FinancialService {
         return vertexAiClient.prompt(userPrompt);
     }
 }
+'''
+
+
+
 
