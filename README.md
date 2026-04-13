@@ -28,7 +28,7 @@ This framework implements a three-tier governance model:
     <artifactId>nsai-deterministic-gate-starter</artifactId>
     <version>1.0.0-BETA</version>
 </dependency>
-'''
+```
 
 **Example Usage**
 ```java
@@ -36,17 +36,36 @@ This framework implements a three-tier governance model:
 public class FinancialService {
 
     @NSDeterministicGate(
-        intent = "LOAN_ELIGIBILITY",
+        intent = "LOAN_APPROVAL",
         symbolicSource = "GCP_KNOWLEDGE_GRAPH",
         enableMLDiagnostics = true
     )
-    public String checkEligibility(String userPrompt) {
+    public String processLoanRequest(String userPrompt) {
         // The gate intercepts this call and validates the response 
         // against the Knowledge Graph before returning to the user.
         return vertexAiClient.prompt(userPrompt);
     }
 }
-'''
+```
+
+## Significance & Research Goals
+The nsai-deterministic-gate framework addresses a critical gap in current Enterprise AI patterns: the lack of a formal bridge between probabilistic model outputs and deterministic business requirements.
+
+### Primary Objectives:
+**Optimization of the "Hallucination Tax":** Developing architectural patterns that reduce computational overhead and token waste by shifting validation logic to a symbolic layer.
+
+**Deterministic AI Governance:** Providing a standardized interface for high-stakes industries (Finance, Cloud Infrastructure, Healthcare) where non-deterministic responses are not an option.
+
+**ML-Driven Diagnostics:** Advancing the study of Neuro-Symbolic AI (NSAI) by using Machine Learning classifiers to audit and refine the boundary between neural "perception" and symbolic "truth."
+
+## Contribution & Peer Review
+I am actively seeking feedback from fellow Association for Computing Machinery (ACM) members and Lead Architects. If you are implementing high-stakes AI and want to collaborate on the Deterministic Gateway pattern, please open an issue or reach out on LinkedIn.
+
+**Architect:** Durga Prasad Dasepalli
+
+**Focus:** Cloud Infrastructure, NSAI, & ML Governance
+
+**LinkedIn:** https://www.linkedin.com/in/durga-prasad-dasepalli-6a451447/
 
 
 
