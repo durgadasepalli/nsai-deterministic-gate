@@ -5,6 +5,8 @@ nsai-deterministic-gate is a specialized Spring Boot framework designed for Seni
 ## The Architecture: NSAI + ML
 This framework implements a three-tier governance model:
 
+[View Full Architecture Documentation](docs/ARCHITECTURE.md). -- Deep dive into the Neuro-Symbolic bridge and deterministic logic flow.
+
 **Neural Layer (Inference):** Vertex AI or Amazon Bedrock handles intent extraction and conversational logic.
 
 **Symbolic Layer (Enforcement):** GCP Enterprise Knowledge Graph or AWS Neptune enforces deterministic business rules via Google Cloud Workflows.
@@ -58,6 +60,15 @@ The nsai-deterministic-gate framework addresses a critical gap in current Enterp
 
 **ML-Driven Diagnostics:** Advancing the study of Neuro-Symbolic AI (NSAI) by using Machine Learning classifiers to audit and refine the boundary between neural "perception" and symbolic "truth."
 
+## Research & Scholarly Development
+The nsai-deterministic-gate is the central implementation of an ongoing research series focused on Deterministic AI Logic.
+
+**Objective::** To establish standardized architectural patterns that bridge probabilistic neural outputs with rigid symbolic business rules.
+
+**Current Focus:** Investigating real-time logic interception and the "Hallucination Tax" in regulated cloud environments.
+
+**Status:** Currently being documented for submission to upcoming international AI and Cloud Architecture conferences.
+
 ## Contribution & Peer Review
 I am actively seeking feedback from fellow Association for Computing Machinery (ACM) members and Lead Architects. If you are implementing high-stakes AI and want to collaborate on the Deterministic Gateway pattern, please open an issue or reach out on LinkedIn.
 
@@ -65,8 +76,5 @@ I am actively seeking feedback from fellow Association for Computing Machinery (
 
 **Focus:** Cloud Infrastructure, NSAI, & ML Governance
 
-**LinkedIn:** https://www.linkedin.com/in/durga-prasad-dasepalli-6a451447/
-
-
-
+**LinkedIn:** https://www.linkedin.com/in/durgaprasaddasepalli/
 
