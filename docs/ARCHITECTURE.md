@@ -30,6 +30,7 @@ sequenceDiagram
         A-->>U: BLOCK: Deterministic Violation
     end
 
+```
 ---
 
 ## 3. Core Components
