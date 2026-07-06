@@ -19,6 +19,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-aop'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    // Add this line to pull in Neo4j repositories
+    implementation 'org.springframework.boot:spring-boot-starter-data-neo4j'
+
 }
 
 springBoot {
@@ -27,4 +30,14 @@ springBoot {
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+test {
+    useJUnitPlatform()
+
+    // Force Gradle to stream sout and serr to the console live
+    testLogging {
+        outputs.upToDateWhen { false } // Prevents caching so logs print every time
+        showStandardStreams = true
+    }
 }
