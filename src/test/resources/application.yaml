@@ -6,4 +6,4 @@ spring:
 nsai:
   gateway:
     enforcement:
-      mode: HARD_REJECT # Switch between SOFT_REPAIR and HARD_REJECT
+      mode: SOFT_REPAIR # Switch between SOFT_REPAIR and HARD_REJECT
