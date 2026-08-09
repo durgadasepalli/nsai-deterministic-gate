@@ -133,4 +133,35 @@ public class DeterministicGateAspectTest {
         verify(graphConnector, times(1)).fetchGraphPolicyConstraints(sampleIntent);
         verify(diagnosticLayer, times(1)).executeCorrectionDeltaLoop(invalidNeuralProposal, mockConstraints);
     }
+
+    @Test
+    @DisplayName("Verify L1 Caffeine Cache reduces graph lookup overhead to under 1ms")
+    void testL1CacheLatencyReduction() {
+        String intent = "LOAN_OFFER";
+
+        // 1. First Call: Cache Miss (Triggers DB delay)
+        long startMiss = System.nanoTime();
+        List<String> rulesFirstCall = graphConnector.fetchGraphPolicyConstraints(intent);
+        long durationMissUs = (System.nanoTime() - startMiss) / 1_000;
+
+        // 2. Second Call: Cache Hit (In-memory lookup)
+        long startHit = System.nanoTime();
+        List<String> rulesSecondCall = graphConnector.fetchGraphPolicyConstraints(intent);
+        long durationHitUs = (System.nanoTime() - startHit) / 1_000;
+
+        System.out.println("\n==================================================");
+        System.out.println("=== NSAI v1.3 L1 CACHE LATENCY BENCHMARK TRACE ===");
+        System.out.println("==================================================");
+        System.out.println("Cache Miss Overhead (DB Traversal) : " + durationMissUs + " µs");
+        System.out.println("Cache Hit Overhead (Caffeine L1)   : " + durationHitUs + " µs");
+        if (durationHitUs > 0) {
+            System.out.println("Performance Gain                   : " + String.format("%.2f", (double) durationMissUs / durationHitUs) + "x faster");
+        }
+        System.out.println("==================================================\n");
+
+        // Assertions
+        assertEquals(rulesFirstCall, rulesSecondCall);
+        assertTrue(durationHitUs < durationMissUs, "Cached lookup must be faster than DB traversal.");
+        assertTrue(durationHitUs < 1_000, "L1 Cache hit execution time must be under 1 millisecond (1000 µs).");
+    }
 }

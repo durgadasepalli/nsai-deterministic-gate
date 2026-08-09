@@ -22,6 +22,10 @@ dependencies {
     // Add this line to pull in Neo4j repositories
     implementation 'org.springframework.boot:spring-boot-starter-data-neo4j'
 
+    // v1.3 Latency Optimization: L1 Caching
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
+
 }
 
 springBoot {
