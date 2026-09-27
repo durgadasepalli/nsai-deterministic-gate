@@ -1,4 +1,9 @@
 # nsai-deterministic-gate: A Self-Optimizing Neuro-Symbolic Gateway
+
+[![CI](https://github.com/durgadasepalli/nsai-deterministic-gate/actions/workflows/ci.yml/badge.svg)](https://github.com/durgadasepalli/nsai-deterministic-gate/actions/workflows/ci.yml)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+![Java 17 | 21](https://img.shields.io/badge/Java-17%20%7C%2021-orange)
+
 Eliminating the "Hallucination Tax" via Deterministic Logic and ML-Driven Diagnostics.
 nsai-deterministic-gate is a specialized Spring Boot framework designed for Senior Architects implementing Generative AI in mission-critical environments (Finance, Healthcare, Cloud Infrastructure). It enforces a Neuro-Symbolic (NSAI) architecture—separating "Perception" (LLMs) from "Truth" (Symbolic Logic)—while utilizing Machine Learning to classify and optimize the interaction between these layers.
 
