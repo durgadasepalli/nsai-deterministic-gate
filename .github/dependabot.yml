@@ -8,6 +8,12 @@ updates:
     groups:
       spring:
         patterns: ["org.springframework*"]
+    ignore:
+      # Major upgrades (Spring Boot 4, Gradle 9) are planned together for December
+      - dependency-name: "org.springframework.boot*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "gradle-wrapper"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
