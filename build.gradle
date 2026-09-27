@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'jacoco'
     id 'org.springframework.boot' version '3.3.0'
     id 'io.spring.dependency-management' version '1.1.5'
 }
@@ -34,14 +35,25 @@ springBoot {
 
 tasks.named('test') {
     useJUnitPlatform()
+    finalizedBy tasks.named('jacocoTestReport')
+
+    testLogging {
+        events 'failed', 'skipped'
+        exceptionFormat 'full'
+        // Stream stdout so the cache benchmark trace is visible
+        showStandardStreams = true
+    }
 }
 
-test {
-    useJUnitPlatform()
+jacoco {
+    toolVersion = '0.8.12'
+}
 
-    // Force Gradle to stream sout and serr to the console live
-    testLogging {
-        outputs.upToDateWhen { false } // Prevents caching so logs print every time
-        showStandardStreams = true
+tasks.named('jacocoTestReport') {
+    dependsOn tasks.named('test')
+    reports {
+        xml.required = true
+        csv.required = true
+        html.required = true
     }
 }
