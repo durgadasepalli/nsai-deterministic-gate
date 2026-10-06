@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Verifies the v1.3 L1 Caffeine cache on the real Spring proxy (not a mock), using
- * cache statistics rather than wall-clock timing alone, so the test is stable on CI.
+ * cache statistics rather than wall-clock timing, so the test is stable on any machine.
  */
 @SpringJUnitConfig(classes = {CacheConfig.class, Neo4jGraphConnector.class})
 class Neo4jGraphConnectorCacheTest {
@@ -45,24 +45,16 @@ class Neo4jGraphConnectorCacheTest {
     void secondLookupIsACacheHit() {
         CacheStats before = stats();
 
-        long startMiss = System.nanoTime();
         List<String> first = graphConnector.fetchGraphPolicyConstraints("LOAN_OFFER");
-        long missMicros = (System.nanoTime() - startMiss) / 1_000;
-
-        long startHit = System.nanoTime();
         List<String> second = graphConnector.fetchGraphPolicyConstraints("LOAN_OFFER");
-        long hitMicros = (System.nanoTime() - startHit) / 1_000;
 
         CacheStats delta = stats().minus(before);
 
-        System.out.printf("%n=== NSAI v1.3 L1 cache trace: miss %d µs, hit %d µs ===%n", missMicros, hitMicros);
-
+        // Verify caching through Caffeine's own counters, not wall-clock timing,
+        // so the result is deterministic on any machine.
         assertThat(second).isEqualTo(first);
         assertThat(delta.missCount()).isEqualTo(1);
         assertThat(delta.hitCount()).isEqualTo(1);
-        // The miss includes the simulated 25 ms graph traversal; the hit is in-memory.
-        assertThat(missMicros).isGreaterThanOrEqualTo(25_000);
-        assertThat(hitMicros).isLessThan(missMicros);
     }
 
     @Test

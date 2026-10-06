@@ -7,3 +7,9 @@ out/
 .DS_Store
 *.log
 .env
+
+# IDE build output (VS Code Java / Eclipse)
+bin/
+.classpath
+.project
+.settings/

@@ -1,113 +1,112 @@
 package com.durgaprasad.nsai.gate.aspect;
 
 import com.durgaprasad.nsai.annotation.NSDeterministicGate;
-import com.durgaprasad.nsai.core.SymbolicConnector;
 import com.durgaprasad.nsai.core.Neo4jGraphConnector;
+import com.durgaprasad.nsai.core.SymbolicConnector;
+import com.durgaprasad.nsai.core.ValidationResult;
+import com.durgaprasad.nsai.core.Violation;
 import com.durgaprasad.nsai.diagnostic.MlDiagnosticLayer;
-import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.annotation.Around;
-import org.aspectj.lang.annotation.Aspect;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-
 import com.durgaprasad.nsai.gate.config.EnforcementConfig;
 import com.durgaprasad.nsai.gate.config.EnforcementMode;
 import com.durgaprasad.nsai.gate.exception.ComplianceViolationException;
-
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
+import java.util.stream.Collectors;
 
 /**
- * The core Neuro-Symbolic Interceptor (Evolved for v1.2).
- * Orchestrates the hand-off between Neural (LLM) and Symbolic layers
- * with switchable Hard Reject / Soft Repair enforcement capabilities.
+ * The core Neuro-Symbolic interceptor.
+ * Runs the neural layer (the annotated method), validates its output against the
+ * requested symbolic source, and applies the configured enforcement mode
+ * (HARD_REJECT or SOFT_REPAIR). Every decision is written as one audit log line.
  */
 @Aspect
 @Component
 public class DeterministicGateAspect {
 
+    private static final Logger log = LoggerFactory.getLogger(DeterministicGateAspect.class);
+
     @Autowired
     private List<SymbolicConnector> connectors;
 
     @Autowired
-    private Neo4jGraphConnector graphConnector; // Retained from v1.1
+    private Neo4jGraphConnector graphConnector;
 
     @Autowired
-    private MlDiagnosticLayer diagnosticLayer;   // Retained from v1.1
+    private MlDiagnosticLayer diagnosticLayer;
 
     @Autowired
-    private EnforcementConfig enforcementConfig; // Added for v1.2 Runtime Governance
+    private EnforcementConfig enforcementConfig;
 
     @Around("@annotation(gateConfig)")
     public Object validateAIPipeline(ProceedingJoinPoint joinPoint, NSDeterministicGate gateConfig) throws Throwable {
-        System.out.println("\n[NSAI-Gate v1.2] Intercepting incoming probabilistic unstructured LLM proposal payload...");
-        
-        // 1. Execute the Neural Layer (Invoke the LLM method)
+        String intent = gateConfig.intent();
+        log.debug("[NSAI-Gate] Intercepting neural proposal for intent={}", intent);
+
+        // 1. Execute the neural layer (the annotated LLM method)
         Object neuralProposal = joinPoint.proceed();
-        
-        if (!(neuralProposal instanceof String)) {
-            return neuralProposal; // Skip validation if result isn't a String/JSON
+
+        if (!(neuralProposal instanceof String proposalText)) {
+            return neuralProposal; // Only text/JSON output is validated
         }
 
-        String proposalText = (String) neuralProposal;
-
-        // 2. Locate the requested Symbolic Source
+        // 2. Locate the requested symbolic source.
+        //    Fail closed: a typo in symbolicSource must never silently switch the gate off.
         SymbolicConnector connector = connectors.stream()
             .filter(c -> c.getSourceIdentifier().equals(gateConfig.symbolicSource()))
             .findFirst()
-            .orElse(null);
+            .orElseThrow(() -> new IllegalStateException(
+                "No SymbolicConnector registered for symbolicSource '" + gateConfig.symbolicSource()
+                + "' (intent " + intent + "). Registered sources: "
+                + connectors.stream().map(SymbolicConnector::getSourceIdentifier).toList()));
 
-        if (connector != null) {
-            Map<String, Object> context = new HashMap<>(); 
-            context.put("origin", "NSAI-GATEWAY");
+        Map<String, Object> context = new HashMap<>();
+        context.put("origin", "NSAI-GATEWAY");
 
-            // 3. Perform Deterministic Validation via Core Rule Engine
-            boolean isValid = connector.validate(gateConfig.intent(), proposalText, context);
+        // 3. Deterministic validation via the symbolic source
+        ValidationResult result = connector.evaluate(intent, proposalText, context);
+        String source = connector.getSourceIdentifier();
 
-            if (!isValid) {
-                System.out.println("[NSAI-Gate v1.2] Base Schema Validation: FAILED. Output contains structural anomalies.");
-                
-                // Fetch active v1.2 strategy from the central Enforcement Controller
-                EnforcementMode activeMode = enforcementConfig.getMode();
-                
-                if (activeMode == EnforcementMode.HARD_REJECT) {
-                    System.out.println("[NSAI-Gate v1.2] CRITICAL: HARD_REJECT mode active. Terminating pipeline execution flow immediately.");
-                    throw new ComplianceViolationException("Execution halted: Neural payload violated strict deterministic constraints for intent: " + gateConfig.intent());
-                }
-                
-                // Fallback to v1.1 Soft Repair Path if diagnostics are explicitly enabled
-                if (gateConfig.enableMLDiagnostics()) {
-                    System.out.println("[NSAI-Gate v1.2] SOFT_REPAIR path engaged. Invoking ML Diagnostic self-correcting loop...");
-                    
-                    connector.logDiagnosticData(proposalText, "LOGIC_VIOLATION");
-                    
-                    // Fetch structural constraints from Knowledge Graph (v1.1 Step)
-                    List<String> graphConstraints = graphConnector.fetchGraphPolicyConstraints(gateConfig.intent());
-                    
-                    // Fire the Machine Learning Diagnostic Self-Correcting Loop (v1.1 Step)
-                    Map<String, Object> repairedPayload = diagnosticLayer.executeCorrectionDeltaLoop(proposalText, graphConstraints);
-                    
-                    System.out.println("[NSAI-Gate v1.2] Injecting corrected deterministic data back into application execution flow.");
-                    return "ACCEPTED WITH ML DIAGNOSTIC REPAIR: " + repairedPayload.toString();
-                }
-                
-                return "BLOCK: Neural proposal violated deterministic symbolic logic for " + gateConfig.intent();
-            }
+        if (result.valid()) {
+            log.info("[NSAI-Gate] intent={} source={} verdict=ALLOWED", intent, source);
+            return neuralProposal;
         }
 
-        return neuralProposal;
+        String reasons = result.violations().stream()
+                .map(Violation::toString)
+                .collect(Collectors.joining("; "));
+        // The raw proposal may contain personal data, so it is logged only at DEBUG.
+        log.debug("[NSAI-Gate] Rejected proposal for intent={}: {}", intent, proposalText);
+
+        // 4. Apply the configured enforcement mode
+        if (enforcementConfig.getMode() == EnforcementMode.HARD_REJECT) {
+            log.info("[NSAI-Gate] intent={} source={} verdict=BLOCKED mode=HARD_REJECT violations=[{}]",
+                    intent, source, reasons);
+            throw new ComplianceViolationException(
+                    "Execution halted: Neural payload violated strict deterministic constraints for intent: "
+                            + intent + " [" + reasons + "]",
+                    intent, result.violations());
+        }
+
+        if (gateConfig.enableMLDiagnostics()) {
+            log.info("[NSAI-Gate] intent={} source={} verdict=REPAIRING mode=SOFT_REPAIR violations=[{}]",
+                    intent, source, reasons);
+            connector.logDiagnosticData(proposalText, "LOGIC_VIOLATION");
+            List<String> graphConstraints = graphConnector.fetchGraphPolicyConstraints(intent);
+            Map<String, Object> repairedPayload = diagnosticLayer.executeCorrectionDeltaLoop(proposalText, graphConstraints);
+            return "ACCEPTED WITH ML DIAGNOSTIC REPAIR: " + repairedPayload;
+        }
+
+        log.info("[NSAI-Gate] intent={} source={} verdict=BLOCKED mode=SOFT_REPAIR diagnostics=off violations=[{}]",
+                intent, source, reasons);
+        return "BLOCK: Neural proposal violated deterministic symbolic logic for " + intent + " [" + reasons + "]";
     }
 }
-
-

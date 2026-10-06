@@ -20,6 +20,20 @@ public interface SymbolicConnector {
     boolean validate(String intent, String neuralProposal, Map<String, Object> context);
 
     /**
+     * Validates a neural proposal and explains which rules failed.
+     * <p>
+     * The default implementation delegates to {@link #validate} and reports one generic
+     * violation, so existing connectors keep working unchanged. Connectors that know
+     * which rule failed should override it.
+     */
+    default ValidationResult evaluate(String intent, String neuralProposal, Map<String, Object> context) {
+        return validate(intent, neuralProposal, context)
+                ? ValidationResult.pass()
+                : ValidationResult.fail(getSourceIdentifier(),
+                        "Proposal violated deterministic constraints for intent " + intent);
+    }
+
+    /**
      * Retrieves the specific symbolic source identifier (e.g., "GCP_KNOWLEDGE_GRAPH").
      */
     String getSourceIdentifier();
