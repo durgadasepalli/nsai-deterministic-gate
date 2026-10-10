@@ -1,0 +1,52 @@
+# Deterministic rules for nsai-deterministic-gate local mode.
+#
+# Example policy for a fictional retail bank ("Example Bank"). Not real lending policy.
+# Each LLM proposal for an intent must pass every rule listed under that intent.
+#
+# Rule keys:
+#   id         stable name, shown in violations and logs (required)
+#   field      value to check; read from JSON (dot.path for nesting) or via `pattern`
+#   pattern    regex to pull the field out of free text; group 1 is the value
+#   required   the field must be present
+#   min / max  inclusive numeric bounds ("25%", "$1,000" are understood)
+#   allowed    list of permitted values
+#   forbidden  regex that must not match anywhere in the proposal
+#   message    optional text shown when the rule fails
+#   repair     'clamp' lets SOFT_REPAIR move an out-of-range number to the nearest bound
+#              (default 'none': the violation always blocks)
+
+unknownIntent: deny   # intents with no rules are rejected (fail closed)
+
+intents:
+  LOAN_OFFER:
+    description: Personal-loan offers drafted by an LLM for Example Bank customers
+    rules:
+      - id: client-id-required
+        field: clientId
+        pattern: '(?i)client\s*id\W+([A-Z0-9-]+)'
+        required: true
+        message: Every offer must reference a client
+
+      - id: max-interest-rate
+        field: interestRate
+        pattern: '(?i)\b(?:interest rate|apr|rate)\b\D{0,20}?(\d+(?:\.\d+)?)\s*%'
+        required: true
+        min: 3.0
+        max: 18.0
+        repair: clamp
+        message: Interest rate must be between 3% and 18% under the lending policy
+
+      - id: term-range
+        field: termMonths
+        pattern: '(?i)(\d+)[\s-]*months?'
+        min: 6
+        max: 84
+        message: Loan term must be 6 to 84 months
+
+      - id: supported-currency
+        field: currency
+        allowed: [USD, CAD]
+
+      - id: no-guaranteed-approval
+        forbidden: '(?i)\bguarantee(?:d)?\s+(?:approval|approved)\b'
+        message: Offers must not promise guaranteed approval
