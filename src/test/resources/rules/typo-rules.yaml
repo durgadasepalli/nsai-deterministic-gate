@@ -1,0 +1,7 @@
+# Deliberately broken: 'maxx' is a typo for 'max'. Used to prove startup fails fast.
+intents:
+  LOAN_OFFER:
+    rules:
+      - id: max-interest-rate
+        field: interestRate
+        maxx: 18
