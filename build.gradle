@@ -24,6 +24,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-neo4j'
 
     // v1.3 Latency Optimization: L1 Caching
+    // Rule engine: parse JSON output from the LLM (version managed by Spring Boot)
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+
     implementation 'org.springframework.boot:spring-boot-starter-cache'
     implementation 'com.github.ben-manes.caffeine:caffeine'
 
