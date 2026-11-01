@@ -182,6 +182,15 @@ Set `nsai.gateway.enforcement.mode` (or `NSAI_MODE` with Docker Compose).
 | `NEO4J_RULES`: rules stored in Neo4j, with inheritance between intents and a Caffeine cache | Available |
 | Your own source | Implement `SymbolicConnector` and register it as a Spring bean |
 
+## Writing rules
+An `allowed` rule restricts a field to a fixed list of permitted values:
+```yaml
+- id: supported-currency
+  field: currency
+  allowed: [USD, CAD]
+```
+A value outside the list is blocked, e.g. `currency = 'EUR' is not one of [USD, CAD]`.
+
 ## Status and roadmap
 The library is published to Maven Central (see [Use it in your own project](#use-it-in-your-own-project)); releases are listed in [CHANGELOG.md](CHANGELOG.md).
 
