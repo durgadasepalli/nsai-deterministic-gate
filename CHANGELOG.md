@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- Evaluation harness (`nsai-gate-eval`, not published): sends a fixed set of 20 loan requests to
+  local Ollama models several times each, checks every answer with the gate (both enforcement
+  modes) and with an independent reference check of the policy, and writes one CSV row per answer.
+  See `docs/EVALUATION.md`.
+
 ## [1.5.0] - 2026-10-25
 
 ### Added
