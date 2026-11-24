@@ -97,6 +97,11 @@ public final class RuleEvaluator {
         List<String> values = new ArrayList<>();
         if (json != null) {
             JsonNode node = lookup(json, rule.field());
+            if (node != null && node.isNull()) {
+                // An explicit JSON null means "no value". Falling back to the text pattern here
+                // would read the word "null" as the value and let a missing required field pass.
+                return values;
+            }
             if (node != null && !node.isNull() && !node.isMissingNode()) {
                 if (node.isArray()) {
                     node.forEach(element -> addScalar(element, values));

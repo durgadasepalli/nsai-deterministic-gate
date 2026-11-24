@@ -144,7 +144,7 @@ public final class EvalHarness {
         }
         try (Writer w = Files.newBufferedWriter(out, StandardCharsets.UTF_8)) {
             w.write(String.join(",", "model", "prompt_id", "category", "run", "seed", "latency_ms",
-                    "error", "oracle_json", "oracle_compliant", "oracle_violations", "message_rate_mismatch",
+                    "error", "oracle_json", "oracle_fenced", "oracle_compliant", "oracle_violations", "message_rate_mismatch",
                     "gate_hard", "gate_soft", "gate_rule_ids", "repair_changes",
                     "oracle_after_repair_compliant", "oracle_after_repair_violations", "output") + "\n");
             for (Row r : rows) {
@@ -152,9 +152,10 @@ public final class EvalHarness {
                         String.valueOf(r.run()), String.valueOf(r.seed()), String.valueOf(r.latencyMs()),
                         nz(r.error())));
                 if (r.oracle() == null) {
-                    cells.addAll(List.of("", "", "", "", "", "", "", "", "", "", ""));
+                    cells.addAll(List.of("", "", "", "", "", "", "", "", "", "", "", ""));
                 } else {
                     cells.add(String.valueOf(r.oracle().json()));
+                    cells.add(String.valueOf(r.oracle().fenced()));
                     cells.add(String.valueOf(r.oracle().compliant()));
                     cells.add(String.join(";", r.oracle().violations()));
                     cells.add(String.valueOf(r.oracle().messageRateMismatch()));

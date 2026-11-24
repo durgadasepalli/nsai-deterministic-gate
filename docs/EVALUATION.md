@@ -19,7 +19,8 @@ For each model, each of the 20 requests in
    out-of-range rate in the customer message.
 
 The reference check is deliberately stricter than the gate in two places: output that is not JSON
-fails, and the customer message is read too. Those are the known limits of the gate, and the
+fails, and the customer message is read too. JSON wrapped in a Markdown code fence is still
+checked against the policy, but counted separately (`oracle_fenced`) as a format problem. Those are the known limits of the gate, and the
 harness measures how often they matter.
 
 ## Request set

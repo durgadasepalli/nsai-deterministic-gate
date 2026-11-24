@@ -10,7 +10,16 @@ All notable changes to this project are documented here. The format follows
 - Evaluation harness (`nsai-gate-eval`, not published): sends a fixed set of 20 loan requests to
   local Ollama models several times each, checks every answer with the gate (both enforcement
   modes) and with an independent reference check of the policy, and writes one CSV row per answer.
-  See `docs/EVALUATION.md`.
+  See `docs/EVALUATION.md`. Answers wrapped in a Markdown code fence are reported as a format
+  problem (`oracle_fenced`), separately from policy violations.
+
+### Fixed
+- A JSON field set to `null` (for example `"clientId": null`) now counts as missing. Before, the
+  evaluator fell back to the field's text pattern, read the word "null" as the value, and let a
+  missing required field pass. Found by the evaluation harness.
+- The demo's `no-guaranteed-approval` rule (YAML and Neo4j seed) now also catches "approval
+  guaranteed" and "you will definitely be approved", wordings local models produced that the
+  previous pattern missed.
 
 ## [1.5.0] - 2026-10-25
 
