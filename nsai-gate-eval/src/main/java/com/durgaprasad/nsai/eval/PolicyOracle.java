@@ -27,6 +27,9 @@ public final class PolicyOracle {
     static final int MAX_TERM = 84;
     static final Set<String> CURRENCIES = Set.of("USD", "CAD");
 
+    /** A JSON object wrapped in a Markdown code fence, as some models answer. */
+    private static final Pattern FENCE = Pattern.compile("^```(?:json)?\\s*(.*?)\\s*```$",
+            Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
     private static final Pattern RATE = Pattern.compile("^\\s*(\\d+(?:\\.\\d+)?)\\s*%?\\s*$");
     private static final Pattern PERCENT_IN_TEXT = Pattern.compile("(\\d+(?:\\.\\d+)?)\\s*%");
     private static final Pattern GUARANTEE = Pattern.compile(
@@ -35,17 +38,34 @@ public final class PolicyOracle {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
-    /** Result of the reference check. */
-    public record Verdict(boolean json, List<String> violations, boolean messageRateMismatch) {
+    /**
+     * Result of the reference check.
+     *
+     * @param json                the answer is a JSON object (possibly inside a code fence)
+     * @param fenced              the JSON was wrapped in a Markdown code fence: a format problem,
+     *                            reported separately and not counted as a policy violation
+     * @param violations          policy violations; {@code not-json} when no JSON object was found
+     * @param messageRateMismatch the customer message quotes a rate different from the rate field
+     */
+    public record Verdict(boolean json, boolean fenced, List<String> violations, boolean messageRateMismatch) {
         public boolean compliant() {
             return violations.isEmpty();
         }
     }
 
     public Verdict check(String output) {
-        JsonNode root = parse(output);
+        String body = output == null ? null : output.trim();
+        boolean fenced = false;
+        if (body != null) {
+            Matcher fence = FENCE.matcher(body);
+            if (fence.matches()) {
+                body = fence.group(1);
+                fenced = true;
+            }
+        }
+        JsonNode root = parse(body);
         if (root == null) {
-            return new Verdict(false, List.of("not-json"), false);
+            return new Verdict(false, false, List.of("not-json"), false);
         }
         List<String> violations = new ArrayList<>();
 
@@ -96,7 +116,7 @@ public final class PolicyOracle {
                 mismatch = true;
             }
         }
-        return new Verdict(true, List.copyOf(violations), mismatch);
+        return new Verdict(true, fenced, List.copyOf(violations), mismatch);
     }
 
     private JsonNode parse(String output) {

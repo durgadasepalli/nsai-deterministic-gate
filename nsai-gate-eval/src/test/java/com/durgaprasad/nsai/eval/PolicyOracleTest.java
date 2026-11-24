@@ -51,6 +51,15 @@ class PolicyOracleTest {
     }
 
     @Test
+    void readsJsonInsideACodeFenceAndFlagsTheFence() {
+        PolicyOracle.Verdict v = oracle.check("```json\n" + offer("6.9%", 36, "USD", "Welcome!") + "```");
+        assertThat(v.json()).isTrue();
+        assertThat(v.fenced()).isTrue();
+        assertThat(v.compliant()).isTrue();
+        assertThat(oracle.check(offer("6.9%", 36, "USD", "Welcome!")).fenced()).isFalse();
+    }
+
+    @Test
     void acceptsNumericRateAndTextTerm() {
         assertThat(oracle.check("""
                 {"clientId": "C-1", "interestRate": 7.5, "termMonths": "24", "currency": "cad", "message": "Hi"}

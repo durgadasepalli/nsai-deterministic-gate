@@ -98,6 +98,15 @@ class RuleEvaluatorTest {
     }
 
     @Test
+    @DisplayName("A JSON field set to null counts as missing; the text pattern is not used instead")
+    void explicitNullIsMissing() {
+        ValidationResult result = evaluator.evaluate("LOAN_OFFER", "{\"clientId\":null,\"interestRate\":\"5%\"}");
+
+        assertThat(ruleIds(result)).containsExactly("client-id");
+        assertThat(result.violations().get(0).message()).contains("required field 'clientId' is missing");
+    }
+
+    @Test
     void valueNotInAllowedList() {
         ValidationResult result = evaluator.evaluate("LOAN_OFFER",
                 "{\"clientId\":\"C-1\",\"interestRate\":5,\"currency\":\"EUR\"}");

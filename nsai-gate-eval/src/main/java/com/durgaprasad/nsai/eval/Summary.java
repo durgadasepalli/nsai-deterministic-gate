@@ -15,7 +15,7 @@ import java.util.Set;
  */
 final class Summary {
 
-    record Counts(int answers, int errors, int notJson, int oracleViolating,
+    record Counts(int answers, int errors, int notJson, int fenced, int oracleViolating,
                   int tp, int fn, int fp, int tn,
                   int repaired, int repairedStillViolating, int repairedMessageMismatch, long medianLatencyMs) { }
 
@@ -24,7 +24,7 @@ final class Summary {
         rows.forEach(r -> models.add(r.model()));
         Map<String, Counts> result = new LinkedHashMap<>();
         for (String model : models) {
-            int answers = 0, errors = 0, notJson = 0, violating = 0, tp = 0, fn = 0, fp = 0, tn = 0;
+            int answers = 0, errors = 0, notJson = 0, fenced = 0, violating = 0, tp = 0, fn = 0, fp = 0, tn = 0;
             int repaired = 0, stillViolating = 0, mismatch = 0;
             List<Long> latencies = new ArrayList<>();
             for (EvalHarness.Row r : rows) {
@@ -39,6 +39,9 @@ final class Summary {
                 answers++;
                 if (!r.oracle().json()) {
                     notJson++;
+                }
+                if (r.oracle().fenced()) {
+                    fenced++;
                 }
                 boolean bad = !r.oracle().compliant();
                 boolean blocked = r.gate().hard() == GateCheck.Verdict.BLOCKED;
@@ -61,7 +64,7 @@ final class Summary {
             }
             latencies.sort(Long::compare);
             long median = latencies.isEmpty() ? 0 : latencies.get(latencies.size() / 2);
-            result.put(model, new Counts(answers, errors, notJson, violating, tp, fn, fp, tn,
+            result.put(model, new Counts(answers, errors, notJson, fenced, violating, tp, fn, fp, tn,
                     repaired, stillViolating, mismatch, median));
         }
         return result;
@@ -69,11 +72,11 @@ final class Summary {
 
     static void print(List<EvalHarness.Row> rows, PrintStream out) {
         out.println();
-        out.println("model | answers | errors | not JSON | oracle violations | gate blocked violations (TP)"
+        out.println("model | answers | errors | not JSON | fenced JSON | oracle violations | gate blocked violations (TP)"
                 + " | missed (FN) | false blocks (FP) | clean allowed (TN) | repaired | repaired but oracle still"
                 + " rejects | repaired with stale message rate | median ms");
-        byModel(rows).forEach((model, c) -> out.printf("%s | %d | %d | %d | %d | %d | %d | %d | %d | %d | %d | %d | %d%n",
-                model, c.answers(), c.errors(), c.notJson(), c.oracleViolating(), c.tp(), c.fn(), c.fp(), c.tn(),
+        byModel(rows).forEach((model, c) -> out.printf("%s | %d | %d | %d | %d | %d | %d | %d | %d | %d | %d | %d | %d | %d%n",
+                model, c.answers(), c.errors(), c.notJson(), c.fenced(), c.oracleViolating(), c.tp(), c.fn(), c.fp(), c.tn(),
                 c.repaired(), c.repairedStillViolating(), c.repairedMessageMismatch(), c.medianLatencyMs()));
     }
 }

@@ -22,7 +22,7 @@ MERGE (child)-[:INHERITS]->(parent);
 
 // ALL_CUSTOMER_COMMS
 MERGE (r:Rule {id: 'no-guaranteed-approval'})
-  SET r.forbidden = '(?i)\\bguarantee(?:d)?\\s+(?:approval|approved)\\b',
+  SET r.forbidden = '(?i)\\bguarantee[sd]?\\b[^.!?]{0,40}\\bapprov|\\bapprov\\w*\\b[^.!?]{0,40}\\bguarantee[sd]?\\b|\\b(?:definitely|certainly)\\b[^.!?]{0,20}\\bapproved\\b',
       r.message = 'Offers must not promise guaranteed approval';
 MATCH (i:Intent {id: 'ALL_CUSTOMER_COMMS'}), (r:Rule {id: 'no-guaranteed-approval'})
 MERGE (i)-[:REQUIRES]->(r);

@@ -48,5 +48,6 @@ intents:
         allowed: [USD, CAD]
 
       - id: no-guaranteed-approval
-        forbidden: '(?i)\bguarantee(?:d)?\s+(?:approval|approved)\b'
+        # "guaranteed approval", "approval guaranteed", "you will definitely be approved"
+        forbidden: '(?i)\bguarantee[sd]?\b[^.!?]{0,40}\bapprov|\bapprov\w*\b[^.!?]{0,40}\bguarantee[sd]?\b|\b(?:definitely|certainly)\b[^.!?]{0,20}\bapproved\b'
         message: Offers must not promise guaranteed approval
