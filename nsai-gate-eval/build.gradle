@@ -1,0 +1,22 @@
+plugins {
+    id 'application'
+}
+
+description = 'Evaluation harness: runs local LLMs through the gate and records the results (not published)'
+
+dependencies {
+    implementation project(':nsai-gate-spring-boot-starter')
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.assertj:assertj-core'
+}
+
+application {
+    mainClass = 'com.durgaprasad.nsai.eval.EvalHarness'
+}
+
+// Relative paths in --rules / --out resolve against the repository root
+tasks.named('run') {
+    workingDir = rootProject.projectDir
+}
