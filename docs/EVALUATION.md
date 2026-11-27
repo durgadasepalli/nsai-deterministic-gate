@@ -80,6 +80,49 @@ example when the rate field was clamped to 18% but the message still quotes 25%.
 - Stop Ollama afterwards with `docker rm -f ollama-eval` (the models stay in the volume).
 - Latency is the full model call on the machine used and says nothing about the gate's own cost.
 
-## Results
+## Results (2026-11-24)
 
-_Not yet recorded._
+Setup: Ollama in Docker on a Windows laptop (CPU only), llama3.2:latest (`a80c4f17acd5`, 2.0 GB)
+and qwen2.5:1.5b (`65ec06548149`, 986 MB), temperature 0.7, seeds 43–52. 600 answers in total:
+20 requests × 10 runs per model with JSON mode on, and 20 × 5 per model with JSON mode off.
+Median time per answer was about 5–6 seconds. No call failed.
+
+The same answers were scored twice: with the rules as released in 1.5.0, and after the fixes in
+#46. Re-running with the same seeds gave byte-identical answers (600 of 600), so every change
+below comes from the rules, not from the models.
+
+### JSON mode on (400 answers)
+
+| Model | Breaks policy | Caught, before → after | Missed, before → after | False blocks | Repaired (soft mode) | Repaired, message still quotes old rate |
+|---|---|---|---|---|---|---|
+| llama3.2 | 95 / 200 | 92 → 95 | 3 → 0 | 0 | 41 | 3 |
+| qwen2.5:1.5b | 70 / 200 | 62 → 69 | 8 → 1 | 0 | 10 | 10 |
+
+### JSON mode off (200 answers)
+
+| Model | Breaks policy | Caught (after fixes) | Missed (after fixes) | False blocks | Answers not in JSON | JSON inside a code fence |
+|---|---|---|---|---|---|---|
+| llama3.2 | 52 / 100 | 49 | 3 | 0 | 5 | 0 |
+| qwen2.5:1.5b | 34 / 100 | 34 | 0 | 0 | 0 | 77 |
+
+### What the runs showed
+
+- **No false blocks.** The gate never blocked an answer the reference check accepted (0 of 600).
+- **Models differ a lot.** For the four risky-credit requests, llama3.2 offered a rate above 18%
+  in 31 of 40 answers (as high as 120%); qwen2.5:1.5b did so in 0 of 40.
+- **A fail-open bug.** One llama3.2 answer per mode had `"clientId": null` and passed, because
+  the evaluator read the word "null" through the text pattern. Fixed in #46.
+- **A rule that was too narrow.** "Approval guaranteed" and "you will definitely be approved"
+  passed the original pattern (9 answers in JSON mode, 5 in text mode). Fixed in #46.
+- **Repair only fixes the field.** When the rate field was clamped to 18%, the customer message
+  still quoted the original rate in 3 of 41 llama3.2 repairs and 10 of 10 qwen2.5:1.5b repairs.
+  The repaired answer passes the gate but would mislead the customer. Use HARD_REJECT, or
+  build the customer text from validated fields, when this matters.
+- **What is still missed.** One answer stated an out-of-range rate only in the message (the gate
+  reads the rate field when the answer is JSON), and three llama3.2 answers to "reply in plain
+  English" were prose. Their values were within policy, so the gate's text patterns accepted
+  them; the reference check rejects them only because they are not JSON.
+- **A gap in the policy itself.** 90 of 200 llama3.2 answers (JSON mode) tell the customer the
+  loan "has been approved". Neither check flags this, because the policy only forbids
+  promising *guaranteed* approval. Deciding whether drafts may claim approval at all is a
+  policy question, not a code fix.
